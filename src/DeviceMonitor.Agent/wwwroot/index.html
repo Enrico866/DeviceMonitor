@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DeviceMonitor</title>
+  <style>
+    :root { --bg: #f6f7f9; --card: #fff; --text: #1d2330; --muted: #6b7280; --line: #e5e7eb;
+            --ok: #16a34a; --degraded: #d97706; --alarm: #dc2626; --unknown: #9ca3af; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #0f1218; --card: #171b23; --text: #e6e8ec; --muted: #9aa3b2; --line: #262c37; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--text); }
+    header { display: flex; align-items: baseline; gap: 12px; padding: 20px 24px 8px; }
+    h1 { font-size: 20px; margin: 0; }
+    .muted { color: var(--muted); }
+    main { padding: 8px 24px 32px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+    .title { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .title h2 { font-size: 15px; margin: 0; }
+    .badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; color: #fff; }
+    .Ok { background: var(--ok); } .Degraded { background: var(--degraded); } .Alarm { background: var(--alarm); } .Unknown { background: var(--unknown); }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-variant-numeric: tabular-nums; }
+    td { padding: 3px 0; border-bottom: 1px solid var(--line); }
+    td:last-child { text-align: right; }
+    section.alarms { grid-column: 1 / -1; }
+    .ev-Raised { color: var(--alarm); font-weight: 600; } .ev-Cleared { color: var(--ok); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>DeviceMonitor</h1>
+    <span class="muted" id="updated">loading…</span>
+  </header>
+  <main id="devices"></main>
+  <main><section class="card alarms"><h2 style="font-size:15px;margin:0">Recent alarm events</h2><table id="alarms"></table></section></main>
+
+  <script>
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const fmt = v => Number.isInteger(v) ? v : v.toFixed(2);
+
+    async function refresh() {
+      try {
+        const [devices, alarms] = await Promise.all([
+          fetch('/api/devices').then(r => r.json()),
+          fetch('/api/alarms').then(r => r.json()),
+        ]);
+
+        document.getElementById('devices').innerHTML = devices.map(d => `
+          <article class="card">
+            <div class="title"><h2>${esc(d.name)} <span class="muted">${esc(d.host)}</span></h2><span class="badge ${esc(d.status)}">${esc(d.status)}</span></div>
+            <table>${Object.entries(d.metrics).map(([k, m]) => `<tr><td>${esc(k)}</td><td>${fmt(m.value)} ${esc(m.unit)}</td></tr>`).join('')}</table>
+          </article>`).join('');
+
+        document.getElementById('alarms').innerHTML = alarms.slice(0, 15).map(a => `
+          <tr><td>${new Date(a.timestamp).toLocaleTimeString()}</td><td class="ev-${esc(a.kind)}">${esc(a.kind)}</td>
+          <td>${esc(a.deviceId)}</td><td>${esc(a.description)}</td><td>${fmt(a.value)}</td></tr>`).join('')
+          || '<tr><td class="muted">No alarms yet</td></tr>';
+
+        document.getElementById('updated').textContent = 'updated ' + new Date().toLocaleTimeString();
+      } catch (e) {
+        document.getElementById('updated').textContent = 'agent not reachable';
+      }
+    }
+
+    refresh();
+    setInterval(refresh, 3000);
+  </script>
+</body>
+</html>

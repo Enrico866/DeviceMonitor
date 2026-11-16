@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/HttpProbePlugin/HttpProbePlugin.csproj" />
+    <Project Path="samples/SnmpSimulator/SnmpSimulator.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/DeviceMonitor.Abstractions/DeviceMonitor.Abstractions.csproj" />
+    <Project Path="src/DeviceMonitor.Agent/DeviceMonitor.Agent.csproj" />
+    <Project Path="src/DeviceMonitor.Probes/DeviceMonitor.Probes.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DeviceMonitor.Tests/DeviceMonitor.Tests.csproj" />
+  </Folder>
+</Solution>

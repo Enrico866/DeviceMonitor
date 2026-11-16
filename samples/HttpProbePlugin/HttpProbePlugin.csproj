@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Example of an external probe plugin. The agent does NOT reference this project:
+    after build the output is copied to the agent's plugins/HttpProbePlugin folder and
+    loaded at startup through an isolated AssemblyLoadContext.
+  -->
+
+  <PropertyGroup>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The contract is provided by the host: compile against it but do not ship a copy. -->
+    <ProjectReference Include="..\..\src\DeviceMonitor.Abstractions\DeviceMonitor.Abstractions.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Target Name="CopyToAgentPlugins" AfterTargets="Build">
+    <ItemGroup>
+      <PluginFiles Include="$(TargetDir)**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PluginFiles)"
+          DestinationFiles="@(PluginFiles->'$(MSBuildThisFileDirectory)..\..\src\DeviceMonitor.Agent\bin\$(Configuration)\$(TargetFramework)\plugins\$(AssemblyName)\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>
